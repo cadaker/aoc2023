@@ -40,13 +40,24 @@ fn is_possible(sets: &[HashMap<String, i64>]) -> bool {
     return true
 }
 
+fn minimal_counts(sets: &[HashMap<String, i64>]) -> (i64, i64, i64) {
+    let reds = *sets.iter().map(|s| s.get("red").unwrap_or(&0)).max().unwrap_or(&0);
+    let greens = *sets.iter().map(|s| s.get("green").unwrap_or(&0)).max().unwrap_or(&0);
+    let blues = *sets.iter().map(|s| s.get("blue").unwrap_or(&0)).max().unwrap_or(&0);
+    return (reds, greens, blues)
+}
+
 fn main () {
     let mut possible_games_sum = 0i64;
+    let mut minimal_games_sum = 0i64;
     for line in io::stdin().lines().map(|l| l.unwrap()) {
         let (game_id, sets) = parse_line(&line);
         if is_possible(&sets) {
             possible_games_sum += game_id
         }
+        let (reds, greens, blues) = minimal_counts(&sets);
+        minimal_games_sum += reds * greens * blues;
     }
-    println!("{}", possible_games_sum)
+    println!("{}", possible_games_sum);
+    println!("{}", minimal_games_sum);
 }
