@@ -8,10 +8,14 @@ struct Card {
     ticket: Vec<i64>,
 }
 
-fn score(card: &Card) -> i64 {
+fn card_matches(card: &Card) -> usize {
     let winning: HashSet<i64> = HashSet::from_iter(card.winning.iter().cloned());
     let ticket: HashSet<i64> = HashSet::from_iter(card.ticket.iter().cloned());
-    let matches = winning.intersection(&ticket).count();
+    return winning.intersection(&ticket).count();
+}
+
+fn score(card: &Card) -> i64 {
+    let matches = card_matches(card);
     if matches == 0 {
         return 0
     } else {
@@ -38,5 +42,19 @@ fn main() {
         .map(|s| parse_card(s.as_str()))
         .collect();
 
-    println!("{}", cards.iter().map(score).sum::<i64>())
+    println!("{}", cards.iter().map(score).sum::<i64>());
+
+    let mut card_counts: Vec<usize> = Vec::new();
+    for _ in &cards {
+        card_counts.push(1);
+    }
+    for i in 0..cards.len() {
+        let matches = card_matches(&cards[i]);
+        for j in i + 1 ..= i + matches {
+            if j < cards.len() {
+                card_counts[j] += card_counts[i];
+            }
+        }
+    }
+    println!("{}", card_counts.iter().sum::<usize>());
 }
