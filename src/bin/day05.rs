@@ -1,6 +1,6 @@
 use std::cmp::min;
 use std::io;
-use regex::Regex;
+use aoc2023::utils::grab_numbers;
 
 struct Mapping {
     dst_start: i64,
@@ -30,15 +30,6 @@ struct Range {
 
 struct Step {
     mappings: Vec<Mapping>,
-}
-
-fn grab_numbers(line: &str) -> Vec<i64> {
-    let pattern = Regex::new("(\\d+)").unwrap();
-    pattern
-        .captures_iter(line)
-        .map(|c| c.get(1).unwrap())
-        .map(|s| s.as_str().parse::<i64>().unwrap())
-        .collect()
 }
 
 fn parse_input(lines: &[String]) -> (Vec<i64>, Vec<Step>) {
