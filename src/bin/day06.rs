@@ -2,16 +2,6 @@ use std::cmp::max;
 use aoc2023::utils::grab_numbers;
 use std::io;
 
-fn parse_input() -> (Vec<i64>, Vec<i64>) {
-    let mut s = String::new();
-    io::stdin().read_line(&mut s).unwrap();
-    let times = grab_numbers(&s);
-    s = String::new();
-    io::stdin().read_line(&mut s).unwrap();
-    let distances = grab_numbers(&s);
-    (times, distances)
-}
-
 fn isqrt_floor(x: i64) -> i64 {
     if x <= 0 {
         return 0
@@ -53,13 +43,32 @@ fn count_wins(duration: i64, record: i64) -> i64 {
     return high - low + 1;
 }
 
+fn all_digits(s: &str) -> i64 {
+    let mut ret = 0;
+    for ch in s.chars() {
+        if ch.is_ascii_digit() {
+            ret = (ret * 10) + ch.to_string().parse::<i64>().unwrap()
+        }
+    }
+    ret
+}
+
 fn main() {
-    let (times, distances) = parse_input();
+    let lines: Vec<String> = io::stdin()
+        .lines()
+        .map(|l| l.unwrap())
+        .collect();
+    let times = grab_numbers(&lines[0]);
+    let distances = grab_numbers(&lines[1]);
 
     let wins_prod: i64 = times.iter().zip(distances)
         .map(|(duration, record)| count_wins(*duration, record))
         .product();
     println!("{}", wins_prod);
+
+    let long_time = all_digits(&lines[0]);
+    let long_record = all_digits(&lines[1]);
+    println!("{}", count_wins(long_time, long_record));
 }
 
 
