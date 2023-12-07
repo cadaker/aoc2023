@@ -1,7 +1,6 @@
 use std::cmp::{Ordering,Ord};
 use regex::Regex;
 use std::io;
-use crate::HandType::{FiveOfAKind, FourOfAKind, FullHouse, HighCard, OnePair, ThreeOfAKind, TwoPair};
 
 struct Hand {
     cards: String,
@@ -52,11 +51,11 @@ fn parse_input() -> Vec<Hand> {
         .collect()
 }
 
-fn count_hand(hand: &Hand, jokers: bool) -> (Count, i64) {
+fn count_hand(hand: &Hand) -> (Count, i64) {
     let mut n_jokers = 0;
     let mut counter = Counter::new();
     for ch in hand.cards.chars() {
-        if jokers && ch == 'J' {
+        if ch == '*' {
             n_jokers += 1;
         } else {
             counter.inc(ch);
@@ -71,6 +70,7 @@ fn count_hand(hand: &Hand, jokers: bool) -> (Count, i64) {
 
 fn rank_card(card: char) -> i64 {
     match card {
+        '*' => 1,
         '2' => 2,
         '3' => 3,
         '4' => 4,
@@ -88,63 +88,44 @@ fn rank_card(card: char) -> i64 {
     }
 }
 
-fn rank_card_jokers(card: char) -> i64 {
-    if card == 'J' {
-        1
-    } else {
-        rank_card(card)
-    }
-}
-
-fn rank_hand(hand: &Hand, jokers: bool) -> HandType {
-    let (counts, n_jokers) = count_hand(hand, jokers);
+fn rank_hand(hand: &Hand) -> HandType {
+    let (counts, n_jokers) = count_hand(hand);
     if n_jokers == 5 {
-        return FiveOfAKind;
+        return HandType::FiveOfAKind;
     }
 
     let (max_n, _) = counts[0];
     if max_n + n_jokers == 5 {
-        FiveOfAKind
+        HandType::FiveOfAKind
     } else if max_n + n_jokers == 4 {
-        FourOfAKind
+        HandType::FourOfAKind
     } else if max_n + n_jokers == 3 {
         let (second_n, _) = counts[1];
         return if second_n == 2 {
-            FullHouse
+            HandType::FullHouse
         } else {
-            ThreeOfAKind
+            HandType::ThreeOfAKind
         }
     } else if max_n + n_jokers == 2 {
         let (second_n, _) = counts[1];
         return if second_n == 2 {
-            TwoPair
+            HandType::TwoPair
         } else {
-            OnePair
+            HandType::OnePair
         }
     } else {
-        HighCard
+        HandType::HighCard
     }
 }
 
 
 fn compare_hands(h1: &Hand, h2: &Hand) -> Ordering {
-    let type1 = rank_hand(h1, false);
-    let type2 = rank_hand(h2, false);
+    let type1 = rank_hand(h1);
+    let type2 = rank_hand(h2);
     type1.cmp(&type2)
         .then_with(|| {
             let v1: Vec<i64> = h1.cards.chars().map(rank_card).collect();
             let v2: Vec<i64> = h2.cards.chars().map(rank_card).collect();
-            v1.cmp(&v2)
-        })
-}
-
-fn compare_hands_jokers(h1: &Hand, h2: &Hand) -> Ordering {
-    let type1 = rank_hand(h1, true);
-    let type2 = rank_hand(h2, true);
-    type1.cmp(&type2)
-        .then_with(|| {
-            let v1: Vec<i64> = h1.cards.chars().map(rank_card_jokers).collect();
-            let v2: Vec<i64> = h2.cards.chars().map(rank_card_jokers).collect();
             v1.cmp(&v2)
         })
 }
@@ -162,6 +143,10 @@ fn main() {
     hands.sort_by(|h1, h2| compare_hands(h1, h2));
     println!("{}", winnings(&hands));
 
-    hands.sort_by(|h1, h2| compare_hands_jokers(h1, h2));
+    for h in &mut hands {
+        h.cards = h.cards.replace("J","*");
+    }
+
+    hands.sort_by(|h1, h2| compare_hands(h1, h2));
     println!("{}", winnings(&hands));
 }
