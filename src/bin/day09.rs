@@ -29,17 +29,28 @@ fn integrate(diffs: &[Sequence]) -> i64 {
     ret
 }
 
-fn predict(s: &Sequence) -> i64 {
+fn integrate_pre(diffs: &[Sequence]) -> i64 {
+    let mut ret = 0;
+    // next + prev = first ==> next = first - prev
+    for s in diffs.iter().rev() {
+        ret = s.first().unwrap() - ret;
+    }
+    ret
+}
+
+fn predict(s: &Sequence) -> (i64, i64) {
     let mut stack: Vec<Sequence> = Vec::new();
     stack.push(s.clone());
     while !all_zero(&stack.last().unwrap()) {
         stack.push(diff(&stack.last().unwrap()))
     }
-    integrate(&stack)
+    (integrate_pre(&stack), integrate(&stack))
 }
 
 fn main () {
     let input = parse_input();
 
-    println!("{}", input.iter().map(predict).sum::<i64>());
+    let pre_post_predictions: Vec<(i64, i64)> = input.iter().map(predict).collect();
+    println!("{}", pre_post_predictions.iter().map(|(_,post)| post).sum::<i64>());
+    println!("{}", pre_post_predictions.iter().map(|(pre,_)| pre).sum::<i64>());
 }
