@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Point {
     pub row: i32,
     pub col: i32,
