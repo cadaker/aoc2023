@@ -13,7 +13,7 @@ fn parse_input() -> Vec<Point> {
     ret
 }
 
-fn expand_space(stars: &[Point]) -> Vec<Point> {
+fn expand_space(stars: &[Point], amount: i32) -> Vec<Point> {
     let mut star_list = Vec::from(stars);
 
     star_list.sort_by_key(|s| s.col);
@@ -21,7 +21,7 @@ fn expand_space(stars: &[Point]) -> Vec<Point> {
     let mut col = star_list[0].col;
     for s in &mut star_list {
         if s.col > col + 1 {
-            dc += s.col - col - 1;
+            dc += (s.col - col - 1) * (amount - 1);
         }
         col = s.col;
         s.col += dc;
@@ -32,7 +32,7 @@ fn expand_space(stars: &[Point]) -> Vec<Point> {
     let mut row = star_list[0].row;
     for s in &mut star_list {
         if s.row > row + 1 {
-            dr += s.row - row - 1;
+            dr += (s.row - row - 1) * (amount - 1);
         }
         row = s.row;
         s.row += dr;
@@ -66,8 +66,12 @@ fn pairwise_distance_sum(stars: &[Point]) -> i64 {
 fn main() {
     let input_stars = parse_input();
 
-    let stars = expand_space(&input_stars);
+    let stars = expand_space(&input_stars, 2);
 
     println!("{}", pairwise_distance_sum(&stars));
+
+    let sparse_stars = expand_space(&input_stars, 1_000_000);
+
+    println!("{}", pairwise_distance_sum(&sparse_stars));
 }
 
