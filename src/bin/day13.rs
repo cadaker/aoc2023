@@ -52,23 +52,33 @@ fn encode_cols(pattern: &Pattern) -> Vec<i64> {
     ret
 }
 
-// Check if the reflection line goes just after pos.
-fn is_reflection(encoded_pattern: &[i64], pos: usize) -> bool {
-    if pos + 1 == encoded_pattern.len() {
-        return false;
-    }
-    let n = min(pos + 1, encoded_pattern.len() - pos - 1);
-    for delta in 1..=n {
-        if encoded_pattern[pos + 1 - delta] != encoded_pattern[pos + delta] {
-            return false;
+fn bit_sum(x: i64) -> usize {
+    let mut ret = 0;
+    for i in 0..64 {
+        if ((1 << i) & x) != 0 {
+            ret += 1
         }
     }
-    true
+    ret
 }
 
-fn find_reflection(encoded_pattern: &[i64]) -> Option<usize> {
+fn bit_difference(x: i64, y: i64) -> usize {
+    bit_sum(x ^ y)
+}
+
+fn count_smudges(encoded_pattern: &[i64], pos: usize) -> usize {
+    assert!(pos + 1 < encoded_pattern.len());
+    let n = min(pos + 1, encoded_pattern.len() - pos - 1);
+    let mut ret = 0;
+    for delta in 1..=n {
+        ret += bit_difference(encoded_pattern[pos + 1 - delta], encoded_pattern[pos + delta]);
+    }
+    ret
+}
+
+fn find_reflection(encoded_pattern: &[i64], expected_smudges: usize) -> Option<usize> {
     for i in 1..encoded_pattern.len() {
-        if is_reflection(encoded_pattern, i-1) {
+        if count_smudges(encoded_pattern, i-1) == expected_smudges {
             return Some(i-1);
         }
     }
@@ -81,9 +91,9 @@ enum Axis {
     Horizontal,
 }
 
-fn find_reflection_line(pattern: &Pattern) -> Option<(Axis, usize)> {
-    let row_match = find_reflection(&encode_rows(pattern));
-    let col_match = find_reflection(&encode_cols(pattern));
+fn find_reflection_line(pattern: &Pattern, expected_smudges: usize) -> Option<(Axis, usize)> {
+    let row_match = find_reflection(&encode_rows(pattern), expected_smudges);
+    let col_match = find_reflection(&encode_cols(pattern), expected_smudges);
     if row_match.is_some() {
         Some((Axis::Horizontal, row_match.unwrap()))
     } else if col_match.is_some() {
@@ -93,12 +103,17 @@ fn find_reflection_line(pattern: &Pattern) -> Option<(Axis, usize)> {
     }
 }
 
+fn summarize(patterns: &[Pattern], expected_smudges: usize) -> usize {
+    patterns.iter()
+        .map(|p| find_reflection_line(p, expected_smudges))
+        .map(|x| x.unwrap())
+        .map(|(axis, n)| (n + 1) * if axis == Axis::Horizontal { 100 } else { 1 })
+        .sum()
+}
+
 fn main() {
     let input = parse_input();
 
-    println!("{}", input.iter()
-        .map(find_reflection_line)
-        .map(|x| x.unwrap())
-        .map(|(axis, n)| (n + 1) * if axis == Axis::Horizontal { 100 } else { 1 })
-        .sum::<usize>());
+    println!("{}", summarize(&input, 0));
+    println!("{}", summarize(&input, 1));
 }
