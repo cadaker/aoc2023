@@ -1,8 +1,9 @@
 use std::cmp::min;
 use aoc2023::utils::{stdio_lines, grab_numbers};
 use std::collections::HashMap;
+use std::iter::FromIterator;
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 enum SpringState {
     Operational,
     Damaged,
@@ -102,8 +103,23 @@ fn count_options(record: &Record) -> usize {
     table[&(0,0)]
 }
 
+fn expand_record(record: &Record) -> Record {
+    let mut springs = Vec::new();
+    let mut groups = Vec::new();
+    for i in 0..5 {
+        if i != 0 {
+            springs.push(SpringState::Unknown);
+        }
+        springs.append(&mut Vec::from_iter(record.springs.iter().cloned()));
+
+        groups.append(&mut Vec::from_iter(record.groups.iter().cloned()))
+    }
+    Record { springs, groups }
+}
+
 fn main() {
     let records = parse_input();
 
     println!("{}", records.iter().map(count_options).sum::<usize>());
+    println!("{}", records.iter().map(expand_record).map(|r| count_options(&r)).sum::<usize>());
 }
