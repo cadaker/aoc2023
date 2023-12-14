@@ -4,6 +4,7 @@ pub struct Point {
     pub col: i32,
 }
 
+#[derive(Clone, PartialEq)]
 pub struct Grid<T> {
     width: i32,
     data: Vec<T>,
