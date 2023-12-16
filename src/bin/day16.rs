@@ -70,12 +70,12 @@ fn step(p: Point, dir: Dir) -> Point {
     }
 }
 
-fn search(grid: &Grid<Square>) -> usize {
+fn search(grid: &Grid<Square>, start_point: Point, start_dir: Dir) -> usize {
     let mut stack = Vec::new();
-    stack.push((Point{ row: 0, col: 0 }, Dir::Right));
+    stack.push((start_point, start_dir));
 
     let mut visited: HashSet<(Point, Dir)> = HashSet::new();
-    visited.insert((Point{ row: 0, col: 0}, Dir::Right));
+    visited.insert((start_point, start_dir));
 
     while !stack.is_empty() {
         let (p, dir) = stack.pop().unwrap();
@@ -108,8 +108,24 @@ fn search(grid: &Grid<Square>) -> usize {
     count
 }
 
+fn maximize_count(grid: &Grid<Square>) -> usize {
+    let mut counts = Vec::new();
+
+    for row in 0..grid.height() {
+        counts.push(search(grid, Point{ row, col: 0 }, Dir::Right));
+        counts.push(search(grid, Point{ row, col: grid.width() - 1 }, Dir::Left));
+    }
+    for col in 0..grid.width() {
+        counts.push(search(grid, Point{ row: 0, col }, Dir::Down));
+        counts.push(search(grid, Point{ row: grid.height() - 1, col }, Dir::Up));
+    }
+
+    *counts.iter().max().unwrap()
+}
+
 fn main() {
     let grid = parse_input();
 
-    println!("{}", search(&grid));
+    println!("{}", search(&grid, Point{ row: 0, col: 0 }, Dir::Right));
+    println!("{}", maximize_count(&grid));
 }
