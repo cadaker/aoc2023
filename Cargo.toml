@@ -54,5 +54,8 @@ name = "day14"
 [[bin]]
 name = "day15"
 
+[[bin]]
+name = "day16"
+
 [dependencies]
 regex = "1.10.2"
