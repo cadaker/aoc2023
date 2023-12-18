@@ -22,9 +22,12 @@ enum Dir {
     Right,
 }
 
-fn possible_dirs(in_dir: Dir, steps: usize) -> Vec<Dir> {
+fn possible_dirs(in_dir: Dir, steps: usize, min: usize, max: usize) -> Vec<Dir> {
+    if steps < min {
+        return vec![in_dir];
+    }
     use Dir::*;
-    match (in_dir, steps >= 3) {
+    match (in_dir, steps >= max) {
         (Left, false) => vec![Left, Up, Down],
         (Left, true) => vec![Up, Down],
         (Right, false) => vec![Right, Up, Down],
@@ -46,7 +49,7 @@ fn step(p: Point, d: Dir) -> Point {
     }
 }
 
-fn search(grid: &Grid<i64>) -> i64 {
+fn search(grid: &Grid<i64>, min_steps: usize, max_steps: usize) -> i64 {
     let mut pq = PriorityQueue::new();
     pq.push((Point{ row: 0, col: 0 }, Dir::Right, 0usize), 0i64);
 
@@ -60,7 +63,7 @@ fn search(grid: &Grid<i64>) -> i64 {
             return -heat_loss;
         }
 
-        for d in possible_dirs(dir, steps) {
+        for d in possible_dirs(dir, steps, min_steps, max_steps) {
             let next_p = step(pos, d);
             if grid.containsp(&next_p) {
                 let next_node = (next_p, d, if d != dir { 1 } else { steps + 1 });
@@ -83,5 +86,6 @@ fn search(grid: &Grid<i64>) -> i64 {
 fn main() {
     let grid = parse_input();
 
-    println!("{}", search(&grid));
+    println!("{}", search(&grid, 0, 3));
+    println!("{}", search(&grid, 4, 10));
 }
