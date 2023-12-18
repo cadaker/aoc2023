@@ -3,9 +3,9 @@ use aoc2023::utils::stdio_lines;
 use aoc2023::grid::Point;
 use aoc2023::dir::{Dir, step, cw, ccw};
 
-fn parse_input() -> Vec<(Dir, i64)> {
+fn parse_input1(lines: &[String]) -> Vec<(Dir, i64)> {
     let pattern = Regex::new("([RULD]) (\\d+) \\(#([0-9a-f]{6})\\)").unwrap();
-    stdio_lines().iter()
+    lines.iter()
         .map(|line| pattern.captures(line).unwrap())
         .map(|c| {
             let (_, [dir, steps, _colour]) = c.extract();
@@ -21,6 +21,41 @@ fn parse_input() -> Vec<(Dir, i64)> {
         .collect()
 }
 
+fn parse_hex(s: &str) -> i64 {
+    let mut ret = 0;
+    for ch in s.chars() {
+        ret = ret * 16 + match ch {
+            'a' | 'A' => 10,
+            'b' | 'B' => 11,
+            'c' | 'C' => 12,
+            'd' | 'D' => 13,
+            'e' | 'E' => 14,
+            'f' | 'F' => 15,
+            digit => digit.to_string().parse().unwrap(),
+        }
+    }
+    ret
+}
+
+fn parse_input2(lines: &[String]) -> Vec<(Dir, i64)> {
+    let pattern = Regex::new("([RULD]) (\\d+) \\(#([0-9a-f]{6})\\)").unwrap();
+    lines.iter()
+        .map(|line| pattern.captures(line).unwrap())
+        .map(|c| {
+            let (_, [_dir, _steps, colour]) = c.extract();
+            let d = match colour.chars().last().unwrap() {
+                '0' => Dir::Right,
+                '1' => Dir::Down,
+                '2' => Dir::Left,
+                '3' => Dir::Up,
+                _ => panic!("bad direction"),
+            };
+            let steps = parse_hex(&colour[..colour.len() - 1]);
+            (d, steps)
+        })
+        .collect()
+}
+
 fn trace_path(turns: &[(Dir, i64)]) -> Vec<(Point, Dir)> {
     let mut p = Point{ row: 0, col: 0 };
     let mut ret = Vec::new();
@@ -32,13 +67,6 @@ fn trace_path(turns: &[(Dir, i64)]) -> Vec<(Point, Dir)> {
     }
     ret
 }
-
-fn fix_offsets(points: &[(Point, Dir)]) -> Vec<(Point, Dir)> {
-    let min_row = points.iter().map(|(p, _d)| p.row).min().unwrap();
-    let min_col = points.iter().map(|(p, _d)| p.col).min().unwrap();
-    points.iter().map(|(p, d)| (Point{ row: p.row - min_row, col: p.col - min_col }, *d)).collect()
-}
-
 
 fn area(path: &[(Point, Dir)]) -> i64 {
     // Green's theorem: dA = sum y * dx
@@ -75,9 +103,13 @@ fn area(path: &[(Point, Dir)]) -> i64 {
 }
 
 fn main() {
-    let input = parse_input();
+    let input_lines = stdio_lines();
 
-    let path = fix_offsets(&trace_path(&input));
+    let input1 = parse_input1(&input_lines);
+    let path1 = trace_path(&input1);
+    println!("{}", area(&path1));
 
-    println!("{}", area(&path));
+    let input2 = parse_input2(&input_lines);
+    let path2 = trace_path(&input2);
+    println!("{}", area(&path2));
 }
