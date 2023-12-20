@@ -1,4 +1,5 @@
 use aoc2023::utils::stdio_lines;
+use aoc2023::numeric::lcm;
 use std::collections::HashMap;
 use regex::Regex;
 use std::collections::VecDeque;
@@ -16,7 +17,9 @@ struct Gate {
     gate_state: GateState,
 }
 
-fn parse_input() -> HashMap<String, Gate> {
+type GateMap = HashMap<String, Gate>;
+
+fn parse_input() -> GateMap {
     let pattern = Regex::new("([%&]?)([a-z]+) -> (.*)").unwrap();
     let mut nodes = Vec::new();
     let mut inputs: HashMap<&str, Vec<&str>> = HashMap::new();
@@ -91,7 +94,7 @@ fn process(gate: &mut Gate, msg: &Message) -> Vec<Message> {
     }
 }
 
-fn run(gates: &mut HashMap<String, Gate>) -> (usize, usize) {
+fn run(gates: &mut GateMap) -> (usize, usize) {
     let mut low = 0;
     let mut high = 0;
     let mut queue = Queue::new();
@@ -114,9 +117,73 @@ fn run(gates: &mut HashMap<String, Gate>) -> (usize, usize) {
     (low, high)
 }
 
-fn main() {
-    let mut gates = parse_input();
+fn gates_sending_to(gates: &GateMap, out: &str) -> Vec<String> {
+    gates.iter()
+        .filter(|&(_, gate)| {
+            gate.outputs.iter().find(|&n| n == out).is_some()
+        })
+        .map(|(name, _)| name.clone())
+        .collect()
+}
 
+fn find_key_nodes(gates: &GateMap, out: &str) -> Option<Vec<String>> {
+    let layer1 = gates_sending_to(gates, out);
+    if layer1.len() != 1 {
+        return None;
+    }
+    let root = gates.get(&layer1[0]).unwrap();
+    if let GateState::Conjunction(inputs) = &root.gate_state {
+        Some(inputs.iter().map(|(name, _)| name.clone()).collect())
+    } else {
+        None
+    }
+}
+
+fn run_and_check_activation(gates: &mut GateMap, out: &str) -> bool {
+    let mut queue = Queue::new();
+    queue.push_back(Message{src: String::from("button"), dst: String::from("broadcaster"), pulse: false});
+
+    let mut ret = false;
+
+    while !queue.is_empty() {
+        let msg = queue.pop_front().unwrap();
+        if msg.src == out && msg.pulse {
+            ret = true;
+        }
+        if let Some(gate) = gates.get_mut(&msg.dst) {
+            for next in process(gate, &msg) {
+                queue.push_back(next);
+            }
+        }
+    }
+    ret
+}
+
+fn run_activation(gates: &mut GateMap, out: &str) -> usize {
+    let mut count = 1;
+    while !run_and_check_activation(gates, out) {
+        count += 1;
+    }
+    count
+}
+
+fn lcm_all(xs: &[usize]) -> usize {
+    xs.iter().cloned().reduce(lcm).unwrap()
+}
+
+fn find_first_activation(gates: &GateMap, out: &str) -> usize {
+    let key_nodes = find_key_nodes(gates, out).unwrap();
+
+    let counts: Vec<usize> = key_nodes.iter()
+        .map(|node| run_activation(&mut gates.clone(), node))
+        .collect();
+    lcm_all(&counts)
+}
+
+fn main() {
+    let input_gates = parse_input();
+
+    let mut gates = input_gates.clone();
     let mut low = 0;
     let mut high = 0;
     for _ in 0..1000 {
@@ -125,4 +192,5 @@ fn main() {
         high += h;
     }
     println!("{}", low * high);
+    println!("{}", find_first_activation(&input_gates, "rx"));
 }
