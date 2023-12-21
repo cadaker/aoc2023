@@ -37,3 +37,12 @@ pub fn step(p: Point, dir: Dir) -> Point {
         Left => Point{ row: p.row, col: p.col - 1 },
     }
 }
+
+pub fn cart_neighbours(p: &Point) -> Vec<Point> {
+    vec![
+        Point{ row: p.row - 1, col: p.col },
+        Point{ row: p.row + 1, col: p.col },
+        Point{ row: p.row, col: p.col - 1 },
+        Point{ row: p.row, col: p.col + 1 },
+    ]
+}
