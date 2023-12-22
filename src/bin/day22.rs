@@ -115,6 +115,18 @@ fn can_be_disintegrated(i: usize, supporting: &Vec<HashSet<usize>>, supported_by
     true
 }
 
+fn fall_chain(i: usize, supported_by: &Vec<HashSet<usize>>) -> usize {
+    let mut falling = HashSet::new();
+    falling.insert(i);
+
+    for (j, supp) in supported_by.iter().enumerate() {
+        if !supp.is_empty() && supp.iter().all(|k| falling.contains(k)) {
+            falling.insert(j.clone());
+        }
+    }
+    falling.len() - 1
+}
+
 fn main() {
     let floating_bricks = parse_input();
     let (_flat_bricks, supporting, supported_by) = stack_bricks(&floating_bricks);
@@ -122,4 +134,9 @@ fn main() {
     println!("{}", (0..floating_bricks.len()).
         filter(|i| can_be_disintegrated(*i, &supporting, &supported_by))
         .count());
+
+    println!("{}", (0..floating_bricks.len())
+        .filter(|i| !can_be_disintegrated(*i, &supporting, &supported_by))
+        .map(|i| fall_chain(i, &supported_by))
+        .sum::<usize>());
 }
