@@ -3,6 +3,7 @@ use aoc2023::grid::{Point, Grid, GridBuilder};
 use aoc2023::dir::{step, Dir};
 use aoc2023::utils::stdio_lines;
 use std::collections::HashMap;
+use std::ops::DerefMut;
 
 fn parse_input() -> Grid<char> {
     let mut builder = GridBuilder::new();
@@ -45,8 +46,8 @@ impl GraphBuilder {
         self.nodes.get_mut(&from).unwrap().exits.push(to)
     }
 
-    fn inc_length(&mut self, id: usize) {
-        self.nodes.get_mut(&id).unwrap().length += 1
+    fn inc_length(&mut self, id: usize, n: usize) {
+        self.nodes.get_mut(&id).unwrap().length += n
     }
 
     fn finish(self) -> Graph {
@@ -82,7 +83,7 @@ fn build_graph(map: &Grid<char>) -> Graph {
         // Scan forward, counting up the length. Also, remember to mark any other entrances.
         let mut pos = entrance;
         loop {
-            builder.inc_length(node);
+            builder.inc_length(node, 1);
             *visited.mutgetp(&pos) = node;
 
             if pos == end {
@@ -148,10 +149,65 @@ fn longest_path(graph: &Graph) -> usize {
     max_len
 }
 
+fn bidirect(graph: &Graph) -> Graph {
+    let mut builder = GraphBuilder::new();
+    for _ in &graph.nodes {
+        builder.new_node();
+    }
+    for (id, node) in &graph.nodes {
+        for e in &node.exits {
+            builder.add_edge(*id, *e);
+            if *id != 0 && *e != 0 {
+                builder.add_edge(*e, *id);
+            }
+        }
+        builder.inc_length(*id, node.length);
+    }
+    builder.finish()
+}
+
+struct State {
+    node_id: usize,
+    next_child: usize,
+    length: usize,
+}
+
+fn longest_path2(graph: &Graph) -> usize {
+    let mut longest_path = 0usize;
+
+    let mut stack = Vec::new();
+    stack.push(State{ node_id: 0, next_child: 0, length: 0});
+
+    let mut visited = Vec::new();
+    visited.resize(graph.nodes.len(), false);
+    visited[0] = true;
+
+    while !stack.is_empty() {
+        let State{node_id, next_child, length} = *stack.last().unwrap();
+        let node = graph.nodes.get(&node_id).unwrap();
+        if next_child == node.exits.len() {
+            visited[node_id] = false;
+            stack.pop();
+        } else {
+            let edge = node.exits[next_child];
+            stack.last_mut().unwrap().deref_mut().next_child += 1;
+            if edge == 0 {
+                longest_path = max(longest_path, length + node.length);
+            } else if !visited[edge] {
+                visited[edge] = true;
+                stack.push(State{ node_id: edge, next_child: 0, length: length + node.length});
+            }
+        }
+    }
+
+    longest_path
+}
+
 fn main() {
     let map = parse_input();
 
     let graph = build_graph(&map);
 
     println!("{}", longest_path(&graph) - 1);
+    println!("{}", longest_path2(&bidirect(&graph)) - 1);
 }
